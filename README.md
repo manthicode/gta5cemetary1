@@ -1,7 +1,7 @@
 # gta5cemetary1
 GTA 5 - Vinewood Cemetary numbered map
 
-https://testusterror.github.io/gta5cemetary1/
+https://manthicode.github.io/gta5cemetary1/
 tiles-style map of the cemetaries of GTA 5
 zoomable.
 

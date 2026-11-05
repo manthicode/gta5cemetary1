@@ -3,9 +3,12 @@
 // ============================================================
 
 const SHEET_ID = "1TpL4K5azf7XJZzhjkSWnBzh40sGfJlGJw6Ev4WTy1mA";
+const SHEET_GID = "0";
+const SHEET_RANGE = "F9:I676";
 
-// Ohne gid wird das erste Tabellenblatt der Google-Tabelle verwendet.
-const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+// Explizites Tabellenblatt (gid=0) und Zellbereich F9:I676.
+const SHEET_CSV_URL =
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}&range=${SHEET_RANGE}`;
 
 const searchInput = document.getElementById("occupancy-search");
 const tableBody = document.getElementById("occupancy-table-body");
@@ -14,8 +17,6 @@ const statusElement = document.getElementById("occupancy-status");
 let occupancyRows = [];
 
 
-// CSV-Parser: berücksichtigt auch durch Anführungszeichen geschützte Kommas
-// und Zeilenumbrüche innerhalb einzelner Tabellenfelder.
 function parseCSV(text) {
     const rows = [];
     let row = [];
@@ -49,7 +50,6 @@ function parseCSV(text) {
 
     row.push(field);
     if (row.some(value => value.trim() !== "")) rows.push(row);
-
     return rows;
 }
 
@@ -63,13 +63,6 @@ function normalizeHeader(value) {
         .replace(/[ü]/g, "u")
         .replace(/[ß]/g, "ss")
         .replace(/[^a-z0-9]/g, "");
-}
-
-
-function findColumn(headers, possibleNames, fallbackIndex) {
-    const normalizedHeaders = headers.map(normalizeHeader);
-    const index = normalizedHeaders.findIndex(header => possibleNames.includes(header));
-    return index >= 0 ? index : fallbackIndex;
 }
 
 
@@ -109,8 +102,12 @@ function appendHighlightedText(cell, text, query) {
 
 function renderTable() {
     const query = searchInput.value.trim();
+    const normalizedQuery = query.toLocaleLowerCase("de-DE");
+
     const filteredRows = occupancyRows.filter(row =>
-        row.some(value => String(value).toLocaleLowerCase("de-DE").includes(query.toLocaleLowerCase("de-DE")))
+        row.some(value =>
+            String(value).toLocaleLowerCase("de-DE").includes(normalizedQuery)
+        )
     );
 
     tableBody.replaceChildren();
@@ -118,18 +115,20 @@ function renderTable() {
     if (filteredRows.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 3;
+        td.colSpan = 4;
         td.className = "placeholder";
-        td.textContent = query ? "Keine passenden Einträge gefunden." : "Keine Belegungsdaten vorhanden.";
+        td.textContent = query
+            ? "Keine passenden Einträge gefunden."
+            : "Keine Belegungsdaten vorhanden.";
         tr.appendChild(td);
         tableBody.appendChild(tr);
     } else {
         for (const row of filteredRows) {
             const tr = document.createElement("tr");
 
-            for (let column = 0; column < 3; column++) {
+            for (let column = 0; column < 4; column++) {
                 const td = document.createElement("td");
-                appendHighlightedText(td, row[column], query);
+                appendHighlightedText(td, row[column] ?? "", query);
                 tr.appendChild(td);
             }
 
@@ -144,6 +143,17 @@ function renderTable() {
 }
 
 
+function isHeaderRow(row) {
+    const knownHeaders = new Set([
+        "name", "personenname",
+        "grabnummer", "grabnr", "grab",
+        "aktennummer", "aktennr", "akte",
+        "reserviert", "reservierung", "reservation"
+    ]);
+    return row.some(value => knownHeaders.has(normalizeHeader(value)));
+}
+
+
 async function loadOccupancyData() {
     setStatus("Lade Belegungsdaten ...");
 
@@ -154,49 +164,71 @@ async function loadOccupancyData() {
             throw new Error(`Google Sheets antwortet mit HTTP ${response.status}.`);
         }
 
-        const contentType = response.headers.get("content-type") || "";
-        const csvText = await response.text();
+        const csvText = (await response.text()).replace(/^\uFEFF/, "");
+        const preview = csvText.slice(0, 350).replace(/\s+/g, " ").trim();
 
-        if (contentType.includes("text/html") || /<html[\s>]/i.test(csvText.slice(0, 500))) {
-            throw new Error("Google liefert keine CSV-Daten. Prüfe, ob die Tabelle öffentlich lesbar ist.");
+        if (/^\s*<(!doctype|html)[\s>]/i.test(csvText)) {
+            throw new Error(
+                "Google liefert eine HTML-Seite statt CSV. Prüfe die Freigabe „Jeder mit dem Link – Betrachter“."
+            );
         }
 
-        const csvRows = parseCSV(csvText.replace(/^\uFEFF/, ""));
+        const csvRows = parseCSV(csvText);
 
-        if (csvRows.length < 2) {
-            throw new Error("Die Tabelle ist leer oder enthält keine Datenzeilen.");
+        if (csvRows.length === 0) {
+            throw new Error("Google hat eine leere CSV-Datei zurückgegeben.");
         }
 
-        const headers = csvRows[0];
-        const nameIndex = findColumn(headers, ["name", "personenname"], 0);
-        const graveIndex = findColumn(headers, ["grabnummer", "grabnr", "grab"], 1);
-        const fileIndex = findColumn(headers, ["aktennummer", "aktennr", "akte"], 2);
+        // F9 kann eine Kopfzeile oder bereits der erste Datensatz sein.
+        const hasHeader = isHeaderRow(csvRows[0]);
+        const headers = hasHeader ? csvRows[0] : [];
+        const dataRows = hasHeader ? csvRows.slice(1) : csvRows;
 
-        occupancyRows = csvRows.slice(1)
+        const normalizedHeaders = headers.map(normalizeHeader);
+        const findIndex = (names, fallback) => {
+            const found = normalizedHeaders.findIndex(header => names.includes(header));
+            return found >= 0 ? found : fallback;
+        };
+
+        const nameIndex = hasHeader
+            ? findIndex(["name", "personenname"], 0) : 0;
+        const graveIndex = hasHeader
+            ? findIndex(["grabnummer", "grabnr", "grab"], 1) : 1;
+        const fileIndex = hasHeader
+            ? findIndex(["aktennummer", "aktennr", "akte"], 2) : 2;
+        const reservedIndex = hasHeader
+            ? findIndex(["reserviert", "reservierung", "reservation"], 3) : 3;
+
+        occupancyRows = dataRows
             .map(row => [
                 row[nameIndex] ?? "",
                 row[graveIndex] ?? "",
-                row[fileIndex] ?? ""
+                row[fileIndex] ?? "",
+                row[reservedIndex] ?? ""
             ])
             .filter(row => row.some(value => String(value).trim() !== ""));
+
+        if (occupancyRows.length === 0) {
+            throw new Error(
+                `CSV wurde erreicht, enthält im Bereich ${SHEET_RANGE} aber keine Belegungszeilen. ` +
+                `Antwortbeginn: ${preview || "(leer)"}`
+            );
+        }
 
         renderTable();
     } catch (error) {
         console.error("Belegungsdaten konnten nicht geladen werden:", error);
-        tableBody.replaceChildren();
 
+        tableBody.replaceChildren();
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 3;
+        td.colSpan = 4;
         td.className = "placeholder";
         td.textContent = "Belegungsdaten konnten nicht geladen werden.";
         tr.appendChild(td);
         tableBody.appendChild(tr);
 
-        setStatus(
-            "Daten nicht verfügbar. Google-Tabelle auf öffentliche Lesbarkeit prüfen. Details stehen in der Browser-Konsole.",
-            true
-        );
+        setStatus(error.message, true);
     }
 }
 

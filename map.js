@@ -91,6 +91,9 @@ L.tileLayer("tiles/{z}/{x}/{y}.jpg", {
     minZoom: 0,
     maxZoom: MAX_ZOOM,
 
+    // Keine Kacheln außerhalb der tatsächlichen Kartenfläche anfordern.
+    bounds: L.latLngBounds(bounds),
+
     noWrap: true,
 
     keepBuffer: 2

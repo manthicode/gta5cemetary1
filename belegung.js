@@ -4,11 +4,12 @@
 
 const SHEET_ID = "1TpL4K5azf7XJZzhjkSWnBzh40sGfJlGJw6Ev4WTy1mA";
 const SHEET_GID = "0";
-const SHEET_RANGE = "a1:d676";
+const SHEET_RANGE = "A1:D676";
 
-// Explizites Tabellenblatt (gid=0) und Zellbereich F9:I676.
+// Das Tabellenblatt (gid=0) als CSV abrufen. Der gewünschte Bereich A1:D676
+// wird anschließend lokal aus der CSV herausgeschnitten.
 const SHEET_CSV_URL =
-    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}&range=${SHEET_RANGE}`;
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 
 const searchInput = document.getElementById("occupancy-search");
 const tableBody = document.getElementById("occupancy-table-body");
@@ -147,7 +148,7 @@ function isHeaderRow(row) {
     const knownHeaders = new Set([
         "name", "personenname",
         "grabnummer", "grabnr", "grab",
-        "aktennummer", "aktennr", "akte",
+        "auftrag", "auftragsnummer", "aktennummer", "aktennr", "akte",
         "reserviert", "reservierung", "reservation"
     ]);
     return row.some(value => knownHeaders.has(normalizeHeader(value)));
@@ -179,10 +180,13 @@ async function loadOccupancyData() {
             throw new Error("Google hat eine leere CSV-Datei zurückgegeben.");
         }
 
-        // F9 kann eine Kopfzeile oder bereits der erste Datensatz sein.
-        const hasHeader = isHeaderRow(csvRows[0]);
-        const headers = hasHeader ? csvRows[0] : [];
-        const dataRows = hasHeader ? csvRows.slice(1) : csvRows;
+        // Die Tabelle beginnt bei A1. Nur A bis D und maximal die Zeilen 1 bis 676 verwenden.
+        const selectedRows = csvRows.slice(0, 676).map(row => row.slice(0, 4));
+
+        // Die erste Zeile kann eine Kopfzeile oder bereits der erste Datensatz sein.
+        const hasHeader = isHeaderRow(selectedRows[0]);
+        const headers = hasHeader ? selectedRows[0] : [];
+        const dataRows = hasHeader ? selectedRows.slice(1) : selectedRows;
 
         const normalizedHeaders = headers.map(normalizeHeader);
         const findIndex = (names, fallback) => {
@@ -195,7 +199,7 @@ async function loadOccupancyData() {
         const graveIndex = hasHeader
             ? findIndex(["grabnummer", "grabnr", "grab"], 1) : 1;
         const fileIndex = hasHeader
-            ? findIndex(["aktennummer", "aktennr", "akte"], 2) : 2;
+            ? findIndex(["auftrag", "auftragsnummer", "aktennummer", "aktennr", "akte"], 2) : 2;
         const reservedIndex = hasHeader
             ? findIndex(["reserviert", "reservierung", "reservation"], 3) : 3;
 

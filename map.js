@@ -81,6 +81,46 @@ const map = L.map("map", {
 
 
 // ------------------------------------------------------------
+// Belegungstabelle ein- und ausblenden
+// ------------------------------------------------------------
+
+const occupancyToggle = L.control({ position: "topleft" });
+
+occupancyToggle.onAdd = function () {
+    const container = L.DomUtil.create("div", "leaflet-bar leaflet-control leaflet-control-occupancy-toggle");
+    const button = L.DomUtil.create("a", "", container);
+
+    button.href = "#";
+    button.textContent = "Belegung ausblenden";
+    button.setAttribute("role", "button");
+    button.setAttribute("aria-label", "Belegungstabelle ausblenden");
+    button.setAttribute("aria-expanded", "true");
+    button.title = "Belegungstabelle ein- oder ausblenden";
+
+    L.DomEvent.disableClickPropagation(container);
+    L.DomEvent.on(button, "click", function (event) {
+        L.DomEvent.preventDefault(event);
+
+        const app = document.getElementById("app");
+        const isHidden = app.classList.toggle("occupancy-hidden");
+
+        button.textContent = isHidden ? "Belegung anzeigen" : "Belegung ausblenden";
+        button.setAttribute("aria-label", isHidden
+            ? "Belegungstabelle anzeigen"
+            : "Belegungstabelle ausblenden");
+        button.setAttribute("aria-expanded", String(!isHidden));
+
+        // Leaflet muss nach der Änderung der Kartenbreite neu messen.
+        requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+    });
+
+    return container;
+};
+
+occupancyToggle.addTo(map);
+
+
+// ------------------------------------------------------------
 // Tiles
 // ------------------------------------------------------------
 

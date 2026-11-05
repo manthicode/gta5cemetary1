@@ -84,40 +84,26 @@ const map = L.map("map", {
 // Belegungstabelle ein- und ausblenden
 // ------------------------------------------------------------
 
-const occupancyToggle = L.control({ position: "topleft" });
+const occupancyToggle = document.getElementById("occupancy-toggle");
+const appElement = document.getElementById("app");
 
-occupancyToggle.onAdd = function () {
-    const container = L.DomUtil.create("div", "leaflet-bar leaflet-control leaflet-control-occupancy-toggle");
-    const button = L.DomUtil.create("a", "", container);
+// Die Tabelle ist beim Start ausgeblendet. Der Button bleibt immer [x].
+occupancyToggle.addEventListener("click", () => {
+    const isVisible = appElement.classList.toggle("occupancy-visible");
 
-    button.href = "#";
-    button.textContent = "Belegung ausblenden";
-    button.setAttribute("role", "button");
-    button.setAttribute("aria-label", "Belegungstabelle ausblenden");
-    button.setAttribute("aria-expanded", "true");
-    button.title = "Belegungstabelle ein- oder ausblenden";
+    occupancyToggle.setAttribute("aria-label", isVisible
+        ? "Belegungstabelle ausblenden"
+        : "Belegungstabelle anzeigen");
+    occupancyToggle.setAttribute("aria-expanded", String(isVisible));
+    occupancyToggle.title = isVisible
+        ? "Belegungstabelle ausblenden"
+        : "Belegungstabelle anzeigen";
 
-    L.DomEvent.disableClickPropagation(container);
-    L.DomEvent.on(button, "click", function (event) {
-        L.DomEvent.preventDefault(event);
-
-        const app = document.getElementById("app");
-        const isHidden = app.classList.toggle("occupancy-hidden");
-
-        button.textContent = isHidden ? "Belegung anzeigen" : "Belegung ausblenden";
-        button.setAttribute("aria-label", isHidden
-            ? "Belegungstabelle anzeigen"
-            : "Belegungstabelle ausblenden");
-        button.setAttribute("aria-expanded", String(!isHidden));
-
-        // Leaflet muss nach der Änderung der Kartenbreite neu messen.
-        requestAnimationFrame(() => map.invalidateSize({ pan: false }));
+    // Leaflet muss nach der Änderung der Kartenbreite neu vermessen werden.
+    requestAnimationFrame(() => {
+        map.invalidateSize({ pan: false });
     });
-
-    return container;
-};
-
-occupancyToggle.addTo(map);
+});
 
 
 // ------------------------------------------------------------

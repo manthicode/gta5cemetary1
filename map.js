@@ -103,3 +103,15 @@ L.tileLayer("tiles/{z}/{x}/{y}.jpg", {
 // ------------------------------------------------------------
 
 map.fitBounds(bounds);
+
+// Für die Belegungsansicht und eventuelle Größenänderungen verfügbar machen.
+window.cemeteryMap = map;
+
+// Leaflet soll seine Darstellung an die tatsächliche Größe des Kartenbereichs anpassen.
+if ("ResizeObserver" in window) {
+    const mapElement = document.getElementById("map");
+    const mapResizeObserver = new ResizeObserver(() => {
+        map.invalidateSize({ pan: false });
+    });
+    mapResizeObserver.observe(mapElement);
+}

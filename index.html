@@ -9,14 +9,54 @@
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
-
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div id="map"></div>
+    <main id="app">
+        <aside id="occupancy-panel" aria-label="Grabbelegung">
+            <header class="panel-header">
+                <h1>Belegung</h1>
+                <p>Grabregister</p>
+            </header>
+
+            <div class="search-wrap">
+                <label for="occupancy-search">Einträge durchsuchen</label>
+                <input
+                    id="occupancy-search"
+                    type="search"
+                    placeholder="Name, Grabnummer oder Akte ..."
+                    autocomplete="off"
+                >
+            </div>
+
+            <div id="occupancy-status" class="occupancy-status" role="status">
+                Lade Belegungsdaten ...
+            </div>
+
+            <div class="table-wrap">
+                <table id="occupancy-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Grabnummer</th>
+                            <th scope="col">Aktennummer</th>
+                        </tr>
+                    </thead>
+                    <tbody id="occupancy-table-body">
+                        <tr><td colspan="3" class="placeholder">Daten werden geladen ...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </aside>
+
+        <section id="map-panel" aria-label="Friedhofskarte">
+            <div id="map"></div>
+        </section>
+    </main>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="map.js"></script>
+    <script src="belegung.js"></script>
 </body>
 </html>

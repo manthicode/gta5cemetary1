@@ -1,9 +1,158 @@
-html, body {
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #202124;
+    background: #171717;
+}
+
+#app {
+    display: grid;
+    grid-template-columns: minmax(250px, 1fr) 4fr;
+    width: 100%;
+    height: 100vh;
+    min-width: 0;
+}
+
+/* Linkes Belegungsfenster */
+#occupancy-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #f7f7f5;
+    border-right: 1px solid #c9c9c5;
+}
+
+.panel-header {
+    padding: 18px 16px 12px;
+    background: #26352d;
+    color: #fff;
+}
+
+.panel-header h1 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 600;
+}
+
+.panel-header p {
+    margin: 5px 0 0;
+    color: #d6dfd8;
+    font-size: 12px;
+}
+
+.search-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 14px 12px 10px;
+}
+
+.search-wrap label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #444;
+}
+
+#occupancy-search {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 11px;
+    border: 1px solid #b9bdb9;
+    border-radius: 5px;
+    outline: none;
+    background: #fff;
+    color: #202124;
+    font-size: 13px;
+}
+
+#occupancy-search:focus {
+    border-color: #536f5d;
+    box-shadow: 0 0 0 2px rgba(83, 111, 93, 0.16);
+}
+
+.occupancy-status {
+    padding: 0 12px 9px;
+    min-height: 25px;
+    color: #666;
+    font-size: 11px;
+}
+
+.occupancy-status.error {
+    color: #a12626;
+    line-height: 1.4;
+}
+
+.table-wrap {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border-top: 1px solid #d7d7d2;
+}
+
+#occupancy-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 12px;
+}
+
+#occupancy-table th,
+#occupancy-table td {
+    padding: 9px 8px;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    border-bottom: 1px solid #e1e1dc;
+}
+
+#occupancy-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #e8ebe7;
+    color: #303b33;
+    font-weight: 700;
+}
+
+#occupancy-table tbody tr:nth-child(even) {
+    background: #efefec;
+}
+
+#occupancy-table tbody tr:hover {
+    background: #e2e9e2;
+}
+
+#occupancy-table mark {
+    padding: 0 1px;
+    background: #ffe66b;
+    color: #171717;
+    border-radius: 2px;
+}
+
+.placeholder {
+    color: #777;
+    text-align: center !important;
+    padding: 18px 10px !important;
+}
+
+/* Rechte Kartenseite */
+#map-panel {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    background: #000;
 }
 
 #map {
@@ -12,7 +161,48 @@ html, body {
     background: #000;
 }
 
-/* Leaflet-Zoombuttons etwas sauberer */
 .leaflet-control-zoom {
     margin: 12px !important;
+}
+
+@media (max-width: 760px) {
+    #app {
+        grid-template-columns: minmax(0, 38%) minmax(0, 62%);
+    }
+
+    .panel-header {
+        padding: 13px 10px 9px;
+    }
+
+    .panel-header h1 {
+        font-size: 17px;
+    }
+
+    .search-wrap {
+        padding: 10px 8px 7px;
+    }
+
+    #occupancy-table {
+        font-size: 10px;
+    }
+
+    #occupancy-table th,
+    #occupancy-table td {
+        padding: 7px 5px;
+    }
+}
+
+@media (max-width: 480px) {
+    #app {
+        grid-template-columns: minmax(0, 42%) minmax(0, 58%);
+    }
+
+    #occupancy-table {
+        font-size: 9px;
+    }
+
+    #occupancy-table th,
+    #occupancy-table td {
+        padding: 6px 3px;
+    }
 }

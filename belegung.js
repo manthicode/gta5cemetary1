@@ -4,7 +4,7 @@
 
 const SHEET_ID = "1TpL4K5azf7XJZzhjkSWnBzh40sGfJlGJw6Ev4WTy1mA";
 const SHEET_GID = "0";
-const SHEET_RANGE = "F9:I676";
+const SHEET_RANGE = "a1:d676";
 
 // Explizites Tabellenblatt (gid=0) und Zellbereich F9:I676.
 const SHEET_CSV_URL =

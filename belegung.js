@@ -4,9 +4,8 @@
 
 const SHEET_ID = "1TpL4K5azf7XJZzhjkSWnBzh40sGfJlGJw6Ev4WTy1mA";
 
-// Liest ausschließlich den gewünschten Zellbereich F9:I676.
-// Google verwendet das erste Tabellenblatt, sofern keine gid angegeben ist.
-const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&range=F9:I676`;
+// Ohne gid wird das erste Tabellenblatt der Google-Tabelle verwendet.
+const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
 
 const searchInput = document.getElementById("occupancy-search");
 const tableBody = document.getElementById("occupancy-table-body");
@@ -119,7 +118,7 @@ function renderTable() {
     if (filteredRows.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 4;
+        td.colSpan = 3;
         td.className = "placeholder";
         td.textContent = query ? "Keine passenden Einträge gefunden." : "Keine Belegungsdaten vorhanden.";
         tr.appendChild(td);
@@ -128,7 +127,7 @@ function renderTable() {
         for (const row of filteredRows) {
             const tr = document.createElement("tr");
 
-            for (let column = 0; column < 4; column++) {
+            for (let column = 0; column < 3; column++) {
                 const td = document.createElement("td");
                 appendHighlightedText(td, row[column], query);
                 tr.appendChild(td);
@@ -172,14 +171,12 @@ async function loadOccupancyData() {
         const nameIndex = findColumn(headers, ["name", "personenname"], 0);
         const graveIndex = findColumn(headers, ["grabnummer", "grabnr", "grab"], 1);
         const fileIndex = findColumn(headers, ["aktennummer", "aktennr", "akte"], 2);
-        const reservedIndex = findColumn(headers, ["reserviert", "reservierung", "reservation"], 3);
 
         occupancyRows = csvRows.slice(1)
             .map(row => [
                 row[nameIndex] ?? "",
                 row[graveIndex] ?? "",
-                row[fileIndex] ?? "",
-                row[reservedIndex] ?? ""
+                row[fileIndex] ?? ""
             ])
             .filter(row => row.some(value => String(value).trim() !== ""));
 
@@ -190,7 +187,7 @@ async function loadOccupancyData() {
 
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 4;
+        td.colSpan = 3;
         td.className = "placeholder";
         td.textContent = "Belegungsdaten konnten nicht geladen werden.";
         tr.appendChild(td);
